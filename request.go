@@ -24,6 +24,21 @@ type Client struct {
 	LastServerResponse string
 }
 
+// NewClient creates a new client with a generated FakeIdentity
+func NewClient(scheme, host, rootPath string) (*Client, error) {
+	fi, err := NewFakeIdentity()
+	if err != nil {
+		return nil, fmt.Errorf("failed identity gen: %v", err)
+	}
+	client := &Client{
+		Scheme:   scheme,
+		Host:     host,
+		RootPath: rootPath,
+		Identity: fi,
+	}
+	return client, nil
+}
+
 // CliURL get a url for a cli request
 func (c *Client) CliURL(nut ssp.Nut, can string) string {
 	params := make(url.Values)
@@ -71,6 +86,7 @@ func (c *Client) MakeCliRequest(cli *ssp.CliRequest) (*ssp.CliResponse, error) {
 	return c.MakeRawCliRequest(cliURL, cli)
 }
 
+// ApplyStateAndSign applies all the correct state from the client and signs where necessary
 func (c *Client) ApplyStateAndSign(cli *ssp.CliRequest) {
 	cli.Server = c.LastServerResponse
 	if cli.Client.Cmd == "ident" {
@@ -82,6 +98,12 @@ func (c *Client) ApplyStateAndSign(cli *ssp.CliRequest) {
 	} else {
 		c.Identity.SignIdk(cli)
 	}
+}
+
+// MakeStandardURLRawCliRequest makes a raw request with the standard URL
+func (c *Client) MakeStandardURLRawCliRequest(cli *ssp.CliRequest) (*ssp.CliResponse, error) {
+	cliURL := c.CliURL(c.CurrentNut, c.NutResponse.Can)
+	return c.MakeRawCliRequest(cliURL, cli)
 }
 
 // MakeRawCliRequest makes an unmodified request as passed in.

@@ -1,57 +1,26 @@
 package sqrlua
 
 import (
+	"flag"
+	"os"
 	"testing"
 
 	ssp "github.com/smw1218/sqrl-ssp"
 )
 
-var scheme = "https"
-var host = "sqrl.grc.com"
+// var scheme = "https"
+// var host = "sqrl.grc.com"
 
-// var scheme = "http"
-// var host = "localhost:8000"
+var scheme = "http"
+var host = "localhost:8000"
 var path = ""
 
-func TestBadRequest(t *testing.T) {
-	client := &Client{
-		Scheme:   scheme,
-		Host:     host,
-		RootPath: path,
-	}
-
-	// broken request with unknown nut
-	req := &ssp.CliRequest{}
-	cliURL := client.CliURL(ssp.Nut("1234"), "")
-	resp, err := client.MakeRawCliRequest(cliURL, req)
-	if err != nil {
-		t.Fatalf("request failed: %v", err)
-	}
-
-	errors := TIFCompare(ssp.TIFClientFailure, resp.TIF)
-	if errors != nil {
-		t.Errorf("tif e: 0x%x a: 0x%x", 0x80, resp.TIF)
-		for _, err := range errors {
-			t.Errorf("TIF Fail: %v", err)
-		}
-	}
-}
-
-func TestQueryRequest(t *testing.T) {
-	fi, err := NewFakeIdentity()
-	if err != nil {
-		t.Fatalf("Failed key gen: %v", err)
-	}
-	client := &Client{
-		Scheme:   scheme,
-		Host:     host,
-		RootPath: path,
-		Identity: fi,
-	}
-	t.Run("A=1", func(t *testing.T) { testValidCmd(t, client, "query", ssp.TIFIPMatched) })
-	// again with same identity but next nut
-	t.Run("A=2", func(t *testing.T) { testValidCmd(t, client, "query", ssp.TIFIPMatched) })
-
+func TestMain(m *testing.M) {
+	flag.StringVar(&scheme, "scheme", "http", "url scheme for the host")
+	flag.StringVar(&host, "host", "localhost:8000", "host to execute the tests against")
+	flag.StringVar(&path, "path", "", "path where the SQRL API is rooted if not /")
+	flag.Parse()
+	os.Exit(m.Run())
 }
 
 func testValidCmd(t *testing.T, client *Client, cmd string, expectedTIF uint32) *ssp.CliResponse {
@@ -83,6 +52,35 @@ func testValidReq(t *testing.T, client *Client, req *ssp.CliRequest, expectedTIF
 	return resp
 }
 
+func testRawReq(t *testing.T, client *Client, req *ssp.CliRequest, expectedTIF uint32) *ssp.CliResponse {
+	resp, err := client.MakeStandardURLRawCliRequest(req)
+	if err != nil {
+		t.Fatalf("request failed: %v", err)
+	}
+
+	// should be unknown identity so only ip matched
+	errors := TIFCompare(expectedTIF, resp.TIF)
+	if errors != nil {
+		t.Errorf("tif e: 0x%x a: 0x%x", expectedTIF, resp.TIF)
+		for _, err := range errors {
+			t.Errorf("TIF Fail: %v", err)
+		}
+	}
+	return resp
+}
+
+func TestQueryRequest(t *testing.T) {
+	client, err := NewClient(scheme, host, path)
+	if err != nil {
+		t.Fatalf("Failed client gen: %v", err)
+	}
+
+	t.Run("A=1", func(t *testing.T) { testValidCmd(t, client, "query", ssp.TIFIPMatched) })
+	// again with same identity but next nut
+	t.Run("A=2", func(t *testing.T) { testValidCmd(t, client, "query", ssp.TIFIPMatched) })
+
+}
+
 func TestQueryIdent(t *testing.T) {
 	fi, err := NewFakeIdentity()
 	if err != nil {
@@ -100,16 +98,11 @@ func TestQueryIdent(t *testing.T) {
 }
 
 func TestQueryIdentQuery(t *testing.T) {
-	fi, err := NewFakeIdentity()
+	client, err := NewClient(scheme, host, path)
 	if err != nil {
-		t.Fatalf("Failed key gen: %v", err)
+		t.Fatalf("Failed client gen: %v", err)
 	}
-	client := &Client{
-		Scheme:   scheme,
-		Host:     host,
-		RootPath: path,
-		Identity: fi,
-	}
+
 	t.Run("A=1", func(t *testing.T) { testValidCmd(t, client, "query", ssp.TIFIPMatched) })
 
 	t.Run("A=2", func(t *testing.T) { testValidCmd(t, client, "ident", ssp.TIFIPMatched) })
@@ -130,16 +123,11 @@ func TestQueryIdentQuery(t *testing.T) {
 }
 
 func TestQueryIdentDisableEnable(t *testing.T) {
-	fi, err := NewFakeIdentity()
+	client, err := NewClient(scheme, host, path)
 	if err != nil {
-		t.Fatalf("Failed key gen: %v", err)
+		t.Fatalf("Failed client gen: %v", err)
 	}
-	client := &Client{
-		Scheme:   scheme,
-		Host:     host,
-		RootPath: path,
-		Identity: fi,
-	}
+
 	t.Run("A=1", func(t *testing.T) { testValidCmd(t, client, "query", ssp.TIFIPMatched) })
 
 	t.Run("A=2", func(t *testing.T) { testValidCmd(t, client, "ident", ssp.TIFIPMatched) })
@@ -153,16 +141,11 @@ func TestQueryIdentDisableEnable(t *testing.T) {
 }
 
 func TestQueryIdentRemove(t *testing.T) {
-	fi, err := NewFakeIdentity()
+	client, err := NewClient(scheme, host, path)
 	if err != nil {
-		t.Fatalf("Failed key gen: %v", err)
+		t.Fatalf("Failed client gen: %v", err)
 	}
-	client := &Client{
-		Scheme:   scheme,
-		Host:     host,
-		RootPath: path,
-		Identity: fi,
-	}
+
 	t.Run("A=1", func(t *testing.T) { testValidCmd(t, client, "query", ssp.TIFIPMatched) })
 
 	t.Run("A=2", func(t *testing.T) { testValidCmd(t, client, "ident", ssp.TIFIPMatched) })
