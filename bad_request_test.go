@@ -53,11 +53,55 @@ func TestBadIdsSignature(t *testing.T) {
 		t.Fatalf("request failed: %v", err)
 	}
 
-	errors := TIFCompare(ssp.TIFClientFailure|ssp.TIFCommandFailed, resp.TIF)
+	var expectedTIF uint32 = ssp.TIFClientFailure | ssp.TIFCommandFailed
+	errors := TIFCompare(expectedTIF, resp.TIF)
 	if errors != nil {
-		t.Errorf("tif e: 0x%x a: 0x%x", 0x80, resp.TIF)
+		t.Errorf("tif e: 0x%x a: 0x%x", expectedTIF, resp.TIF)
 		for _, err := range errors {
 			t.Errorf("TIF Fail: %v", err)
 		}
 	}
+}
+
+func TestQueryIdentDisableEnableNoURS(t *testing.T) {
+	client, err := NewClient(scheme, host, path)
+	if err != nil {
+		t.Fatalf("Failed client gen: %v", err)
+	}
+
+	t.Run("A=1", func(t *testing.T) { testValidCmd(t, client, "query", ssp.TIFIPMatched) })
+
+	t.Run("A=2", func(t *testing.T) { testValidCmd(t, client, "ident", ssp.TIFIPMatched) })
+
+	// disable
+	t.Run("A=3", func(t *testing.T) {
+		testValidCmd(t, client, "disable", ssp.TIFIPMatched|ssp.TIFIDMatch|ssp.TIFSQRLDisabled)
+	})
+
+	// broken request with garbage signature
+	req := &ssp.CliRequest{
+		Client: &ssp.ClientBody{
+			Version: []int{1},
+			Cmd:     "enable",
+		},
+	}
+	client.ApplyStateAndSign(req)
+	// mess up urs
+	req.Urs = "somegarbage"
+
+	resp, err := client.MakeStandardURLRawCliRequest(req)
+	if err != nil {
+		t.Fatalf("request failed: %v", err)
+	}
+
+	var expectedTIF uint32 = ssp.TIFIPMatched | ssp.TIFIDMatch | ssp.TIFClientFailure | ssp.TIFCommandFailed | ssp.TIFSQRLDisabled
+	errors := TIFCompare(expectedTIF, resp.TIF)
+	if errors != nil {
+		t.Errorf("tif e: 0x%x a: 0x%x", expectedTIF, resp.TIF)
+		for _, err := range errors {
+			t.Errorf("TIF Fail: %v", err)
+		}
+	}
+
+	t.Run("A=4", func(t *testing.T) { testValidCmd(t, client, "enable", ssp.TIFIPMatched|ssp.TIFIDMatch) })
 }
