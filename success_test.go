@@ -44,7 +44,7 @@ func testValidReq(t *testing.T, client *Client, req *ssp.CliRequest, expectedTIF
 	// should be unknown identity so only ip matched
 	errors := TIFCompare(expectedTIF, resp.TIF)
 	if errors != nil {
-		t.Errorf("tif e: 0x%x a: 0x%x", expectedTIF, resp.TIF)
+		t.Errorf("TIF expected: 0x%x actual: 0x%x", expectedTIF, resp.TIF)
 		for _, err := range errors {
 			t.Errorf("TIF Fail: %v", err)
 		}
@@ -61,7 +61,7 @@ func testRawReq(t *testing.T, client *Client, req *ssp.CliRequest, expectedTIF u
 	// should be unknown identity so only ip matched
 	errors := TIFCompare(expectedTIF, resp.TIF)
 	if errors != nil {
-		t.Errorf("tif e: 0x%x a: 0x%x", expectedTIF, resp.TIF)
+		t.Errorf("TIF expected: 0x%x actual: 0x%x", expectedTIF, resp.TIF)
 		for _, err := range errors {
 			t.Errorf("TIF Fail: %v", err)
 		}

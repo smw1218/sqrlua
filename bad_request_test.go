@@ -23,7 +23,7 @@ func TestBadNutRequest(t *testing.T) {
 
 	errors := TIFCompare(ssp.TIFClientFailure|ssp.TIFCommandFailed, resp.TIF)
 	if errors != nil {
-		t.Errorf("tif e: 0x%x a: 0x%x", 0x80, resp.TIF)
+		t.Errorf("TIF expected: 0x%x actual: 0x%x", 0x80, resp.TIF)
 		for _, err := range errors {
 			t.Errorf("TIF Fail: %v", err)
 		}
@@ -56,7 +56,7 @@ func TestBadIdsSignature(t *testing.T) {
 	var expectedTIF uint32 = ssp.TIFClientFailure | ssp.TIFCommandFailed
 	errors := TIFCompare(expectedTIF, resp.TIF)
 	if errors != nil {
-		t.Errorf("tif e: 0x%x a: 0x%x", expectedTIF, resp.TIF)
+		t.Errorf("TIF expected: 0x%x actual: 0x%x", expectedTIF, resp.TIF)
 		for _, err := range errors {
 			t.Errorf("TIF Fail: %v", err)
 		}
@@ -97,7 +97,7 @@ func TestQueryIdentDisableEnableNoURS(t *testing.T) {
 	var expectedTIF uint32 = ssp.TIFIPMatched | ssp.TIFIDMatch | ssp.TIFClientFailure | ssp.TIFCommandFailed | ssp.TIFSQRLDisabled
 	errors := TIFCompare(expectedTIF, resp.TIF)
 	if errors != nil {
-		t.Errorf("tif e: 0x%x a: 0x%x", expectedTIF, resp.TIF)
+		t.Errorf("TIF expected: 0x%x actual: 0x%x", expectedTIF, resp.TIF)
 		for _, err := range errors {
 			t.Errorf("TIF Fail: %v", err)
 		}

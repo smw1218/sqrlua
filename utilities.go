@@ -2,14 +2,15 @@ package sqrlua
 
 import (
 	"fmt"
-	"log"
 
 	ssp "github.com/smw1218/sqrl-ssp"
 )
 
 func TIFCompare(expected, actual uint32) []error {
 	diff := expected ^ actual
-	log.Printf("diff: %x", diff)
+	if diff == 0 {
+		return nil
+	}
 	errors := make([]error, 0)
 	var i uint32
 	for i = 0; i < 32; i++ {
@@ -24,5 +25,4 @@ func TIFCompare(expected, actual uint32) []error {
 		return nil
 	}
 	return errors
-
 }

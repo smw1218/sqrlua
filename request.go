@@ -109,11 +109,15 @@ func (c *Client) MakeStandardURLRawCliRequest(cli *ssp.CliRequest) (*ssp.CliResp
 // MakeRawCliRequest makes an unmodified request as passed in.
 // It does save to c.LastResponse and c.CurrentNut to enable better chaining
 func (c *Client) MakeRawCliRequest(cliURL string, cli *ssp.CliRequest) (*ssp.CliResponse, error) {
-	log.Printf("Posting to %v", cliURL)
 	reqBody := cli.Encode()
-	log.Printf("Req Client: %#v", cli.Client)
-	log.Printf("Body %v", reqBody)
-	resp, err := http.Post(cliURL, "application/x-www-form-urlencoded", strings.NewReader(reqBody))
+	log.Printf("Posting to: %v", cliURL)
+	log.Printf("Body: %v", reqBody)
+	req, err := http.NewRequest(http.MethodPost, cliURL, strings.NewReader(reqBody))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	resp, err := http.DefaultTransport.RoundTrip(req)
 	if err != nil {
 		return nil, fmt.Errorf("error posting request: %v", err)
 	}
@@ -125,7 +129,7 @@ func (c *Client) MakeRawCliRequest(cliURL string, cli *ssp.CliRequest) (*ssp.Cli
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("invalid response code: %v", resp.Status)
 	}
-	log.Printf("Resp raw: %v", string(body))
+	log.Printf("Response: %v", string(body))
 	cliResp, err := ssp.ParseCliResponse(body)
 	if err != nil {
 		return nil, err
@@ -215,7 +219,11 @@ type NutResponse struct {
 // These can be overridden after the request.
 func (c *Client) MakeNutRequest() (*NutResponse, error) {
 	u := c.NutURL()
-	resp, err := http.Get(u)
+	req, err := http.NewRequest(http.MethodGet, u, nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := http.DefaultTransport.RoundTrip(req)
 	if err != nil {
 		return nil, err
 	}
