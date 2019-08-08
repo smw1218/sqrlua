@@ -71,7 +71,7 @@ func TestQueryIdentDisableEnableNoURS(t *testing.T) {
 
 	t.Run("A=1", func(t *testing.T) { testValidCmd(t, client, "query", ssp.TIFIPMatched) })
 
-	t.Run("A=2", func(t *testing.T) { testValidCmd(t, client, "ident", ssp.TIFIPMatched) })
+	t.Run("A=2", func(t *testing.T) { testValidCmd(t, client, "ident", ssp.TIFIPMatched|ssp.TIFIDMatch) })
 
 	// disable
 	t.Run("A=3", func(t *testing.T) {

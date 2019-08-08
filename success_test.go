@@ -94,7 +94,7 @@ func TestQueryIdent(t *testing.T) {
 	}
 	t.Run("A=1", func(t *testing.T) { testValidCmd(t, client, "query", ssp.TIFIPMatched) })
 	// again with same identity but next nut
-	t.Run("A=2", func(t *testing.T) { testValidCmd(t, client, "ident", ssp.TIFIPMatched) })
+	t.Run("A=2", func(t *testing.T) { testValidCmd(t, client, "ident", ssp.TIFIPMatched|ssp.TIFIDMatch) })
 }
 
 func TestQueryIdentQuery(t *testing.T) {
@@ -105,7 +105,7 @@ func TestQueryIdentQuery(t *testing.T) {
 
 	t.Run("A=1", func(t *testing.T) { testValidCmd(t, client, "query", ssp.TIFIPMatched) })
 
-	t.Run("A=2", func(t *testing.T) { testValidCmd(t, client, "ident", ssp.TIFIPMatched) })
+	t.Run("A=2", func(t *testing.T) { testValidCmd(t, client, "ident", ssp.TIFIPMatched|ssp.TIFIDMatch) })
 
 	// should be recognized
 	req := &ssp.CliRequest{
@@ -130,7 +130,7 @@ func TestQueryIdentDisableEnable(t *testing.T) {
 
 	t.Run("A=1", func(t *testing.T) { testValidCmd(t, client, "query", ssp.TIFIPMatched) })
 
-	t.Run("A=2", func(t *testing.T) { testValidCmd(t, client, "ident", ssp.TIFIPMatched) })
+	t.Run("A=2", func(t *testing.T) { testValidCmd(t, client, "ident", ssp.TIFIPMatched|ssp.TIFIDMatch) })
 
 	// disable
 	t.Run("A=3", func(t *testing.T) {
@@ -148,11 +148,11 @@ func TestQueryIdentRemove(t *testing.T) {
 
 	t.Run("A=1", func(t *testing.T) { testValidCmd(t, client, "query", ssp.TIFIPMatched) })
 
-	t.Run("A=2", func(t *testing.T) { testValidCmd(t, client, "ident", ssp.TIFIPMatched) })
+	t.Run("A=2", func(t *testing.T) { testValidCmd(t, client, "ident", ssp.TIFIPMatched|ssp.TIFIDMatch) })
 
 	// remove
 	t.Run("A=3", func(t *testing.T) {
-		testValidCmd(t, client, "remove", ssp.TIFIPMatched|ssp.TIFIDMatch)
+		testValidCmd(t, client, "remove", ssp.TIFIPMatched)
 	})
 
 	t.Run("A=4", func(t *testing.T) { testValidCmd(t, client, "query", ssp.TIFIPMatched) })
