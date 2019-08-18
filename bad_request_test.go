@@ -7,11 +7,11 @@ import (
 )
 
 func TestBadNutRequest(t *testing.T) {
-	client := &Client{
-		Scheme:   scheme,
-		Host:     host,
-		RootPath: path,
+	client, err := NewClient(scheme, host, path)
+	if err != nil {
+		t.Fatalf("Failed client gen: %v", err)
 	}
+	testValidCmd(t, client, "query", ssp.TIFIPMatched)
 
 	// broken request with unknown nut
 	req := &ssp.CliRequest{}

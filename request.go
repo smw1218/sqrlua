@@ -13,6 +13,8 @@ import (
 	ssp "github.com/smw1218/sqrl-ssp"
 )
 
+var UseJava = false
+
 // Client is a stafeful client to a single SQRL SSP service
 type Client struct {
 	Scheme             string
@@ -20,8 +22,10 @@ type Client struct {
 	RootPath           string
 	Identity           *FakeIdentity
 	NutResponse        *NutResponse
+	Qry                string
 	CurrentNut         ssp.Nut
 	LastServerResponse string
+	Nutter             Nutter
 }
 
 // NewClient creates a new client with a generated FakeIdentity
@@ -36,6 +40,13 @@ func NewClient(scheme, host, rootPath string) (*Client, error) {
 		RootPath: rootPath,
 		Identity: fi,
 	}
+
+	if UseJava {
+		client.Nutter = &JavaNutter{}
+	} else {
+		// default to self for the Nutter
+		client.Nutter = client
+	}
 	return client, nil
 }
 
@@ -49,7 +60,7 @@ func (c *Client) CliURL(nut ssp.Nut, can string) string {
 		params.Add("can", can)
 	}
 	u := c.baseURL()
-	u.Path += "/cli.sqrl"
+	u.Path = c.Qry
 	if len(params) > 0 {
 		u.RawQuery = params.Encode()
 	}
@@ -74,10 +85,14 @@ func (c *Client) baseURL() *url.URL {
 // MakeCliRequest tries to make a valid cli request filling in the internal state as we go
 func (c *Client) MakeCliRequest(cli *ssp.CliRequest) (*ssp.CliResponse, error) {
 	if c.CurrentNut == "" {
-		_, err := c.MakeNutRequest()
+		nr, err := c.Nutter.GetNut()
 		if err != nil {
 			return nil, err
 		}
+		c.NutResponse = nr
+		c.LastServerResponse = ssp.Sqrl64.EncodeToString([]byte(nr.SQRLURL.String()))
+		c.Qry = nr.SQRLURL.Path
+		c.CurrentNut = nr.Nut
 	}
 
 	cliURL := c.CliURL(c.CurrentNut, c.NutResponse.Can)
@@ -139,8 +154,8 @@ func (c *Client) MakeRawCliRequest(cliURL string, cli *ssp.CliRequest) (*ssp.Cli
 	return cliResp, nil
 }
 
-// SQRLCliURL returns a SQRL url for the configured server
-func (c *Client) SQRLCliURL(nr *NutResponse, includeCan bool) string {
+// SQRLCliURL returns a SQRL url for the configured SSP server
+func (c *Client) SQRLCliURL(nr *NutResponse, includeCan bool) *url.URL {
 	u := c.baseURL()
 	u.Scheme = ssp.SqrlScheme
 	u.Path += "/cli.sqrl"
@@ -150,7 +165,7 @@ func (c *Client) SQRLCliURL(nr *NutResponse, includeCan bool) string {
 		params.Add("can", ssp.Sqrl64.EncodeToString([]byte(nr.Can)))
 	}
 	u.RawQuery = params.Encode()
-	return u.String()
+	return u
 }
 
 // FakeIdentity holds keys to allow for test requests to a SQRL server
@@ -206,11 +221,8 @@ func (fi *FakeIdentity) signUrs(req *ssp.CliRequest) {
 	req.Urs = ssp.Sqrl64.EncodeToString(ed25519.Sign(fi.VukPrivate, req.SigningString()))
 }
 
-// NutResponse data from nut NutRequest
-type NutResponse struct {
-	Nut    ssp.Nut
-	PagNut ssp.Nut
-	Can    string
+func (c *Client) GetNut() (*NutResponse, error) {
+	return c.MakeNutRequest()
 }
 
 // MakeNutRequest make a request for a nut
@@ -244,8 +256,6 @@ func (c *Client) MakeNutRequest() (*NutResponse, error) {
 		PagNut: ssp.Nut(params.Get("pag")),
 		Can:    params.Get("can"),
 	}
-	c.NutResponse = nr
-	c.LastServerResponse = ssp.Sqrl64.EncodeToString([]byte(c.SQRLCliURL(nr, false)))
-	c.CurrentNut = nr.Nut
+	nr.SQRLURL = c.SQRLCliURL(nr, false)
 	return nr, nil
 }

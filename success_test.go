@@ -14,12 +14,15 @@ import (
 var scheme = "http"
 var host = "localhost:8000"
 var path = ""
+var java bool
 
 func TestMain(m *testing.M) {
 	flag.StringVar(&scheme, "scheme", "http", "url scheme for the host")
 	flag.StringVar(&host, "host", "localhost:8000", "host to execute the tests against")
 	flag.StringVar(&path, "path", "", "path where the SQRL API is rooted if not /")
+	flag.BoolVar(&java, "java", false, "make requests compatible with the sqrljava.com")
 	flag.Parse()
+	UseJava = java
 	os.Exit(m.Run())
 }
 
@@ -69,7 +72,7 @@ func testRawReq(t *testing.T, client *Client, req *ssp.CliRequest, expectedTIF u
 	return resp
 }
 
-func TestQueryRequest(t *testing.T) {
+func TestGoodQueryRequest(t *testing.T) {
 	client, err := NewClient(scheme, host, path)
 	if err != nil {
 		t.Fatalf("Failed client gen: %v", err)
@@ -81,23 +84,22 @@ func TestQueryRequest(t *testing.T) {
 
 }
 
-func TestQueryIdent(t *testing.T) {
+func TestGoodQueryIdent(t *testing.T) {
 	fi, err := NewFakeIdentity()
 	if err != nil {
 		t.Fatalf("Failed key gen: %v", err)
 	}
-	client := &Client{
-		Scheme:   scheme,
-		Host:     host,
-		RootPath: path,
-		Identity: fi,
+	client, err := NewClient(scheme, host, path)
+	if err != nil {
+		t.Fatalf("Failed client gen: %v", err)
 	}
+	client.Identity = fi
 	t.Run("A=1", func(t *testing.T) { testValidCmd(t, client, "query", ssp.TIFIPMatched) })
 	// again with same identity but next nut
 	t.Run("A=2", func(t *testing.T) { testValidCmd(t, client, "ident", ssp.TIFIPMatched|ssp.TIFIDMatch) })
 }
 
-func TestQueryIdentQuery(t *testing.T) {
+func TestGoodQueryIdentQuery(t *testing.T) {
 	client, err := NewClient(scheme, host, path)
 	if err != nil {
 		t.Fatalf("Failed client gen: %v", err)
@@ -122,7 +124,7 @@ func TestQueryIdentQuery(t *testing.T) {
 	}
 }
 
-func TestQueryIdentDisableEnable(t *testing.T) {
+func TestGoodQueryIdentDisableEnable(t *testing.T) {
 	client, err := NewClient(scheme, host, path)
 	if err != nil {
 		t.Fatalf("Failed client gen: %v", err)
@@ -140,7 +142,7 @@ func TestQueryIdentDisableEnable(t *testing.T) {
 	t.Run("A=4", func(t *testing.T) { testValidCmd(t, client, "enable", ssp.TIFIPMatched|ssp.TIFIDMatch) })
 }
 
-func TestQueryIdentRemove(t *testing.T) {
+func TestGoodQueryIdentRemove(t *testing.T) {
 	client, err := NewClient(scheme, host, path)
 	if err != nil {
 		t.Fatalf("Failed client gen: %v", err)
