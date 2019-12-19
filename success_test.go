@@ -14,15 +14,14 @@ import (
 var scheme = "http"
 var host = "localhost:8000"
 var path = ""
-var java bool
 
 func TestMain(m *testing.M) {
 	flag.StringVar(&scheme, "scheme", "http", "url scheme for the host")
 	flag.StringVar(&host, "host", "localhost:8000", "host to execute the tests against")
 	flag.StringVar(&path, "path", "", "path where the SQRL API is rooted if not /")
-	flag.BoolVar(&java, "java", false, "make requests compatible with the sqrljava.com")
+	flag.BoolVar(&UseJava, "java", false, "make requests compatible with the sqrljava.com")
+	flag.BoolVar(&UseDotNet, "dotnet", false, "make requests compatible with the SqrlforNet")
 	flag.Parse()
-	UseJava = java
 	os.Exit(m.Run())
 }
 
@@ -119,8 +118,9 @@ func TestGoodQueryIdentQuery(t *testing.T) {
 	}
 	var resp *ssp.CliResponse
 	t.Run("A=3", func(t *testing.T) { resp = testValidReq(t, client, req, ssp.TIFIPMatched|ssp.TIFIDMatch) })
-	if resp.Suk != ssp.Sqrl64.EncodeToString(client.Identity.Suk) {
-		t.Errorf("Suk incorrect from server e: %v a: %v", client.Identity.Suk, resp.Suk)
+	expectedSuk := ssp.Sqrl64.EncodeToString(client.Identity.Suk)
+	if resp.Suk != expectedSuk {
+		t.Errorf("Suk incorrect from server e: %v a: %v", expectedSuk, resp.Suk)
 	}
 }
 

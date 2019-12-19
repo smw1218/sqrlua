@@ -14,6 +14,7 @@ import (
 )
 
 var UseJava = false
+var UseDotNet = false
 
 // Client is a stafeful client to a single SQRL SSP service
 type Client struct {
@@ -43,6 +44,8 @@ func NewClient(scheme, host, rootPath string) (*Client, error) {
 
 	if UseJava {
 		client.Nutter = &JavaNutter{}
+	} else if UseDotNet {
+		client.Nutter = &DotNetNutter{}
 	} else {
 		// default to self for the Nutter
 		client.Nutter = client
@@ -125,7 +128,11 @@ func (c *Client) MakeStandardURLRawCliRequest(cli *ssp.CliRequest) (*ssp.CliResp
 // It does save to c.LastResponse and c.CurrentNut to enable better chaining
 func (c *Client) MakeRawCliRequest(cliURL string, cli *ssp.CliRequest) (*ssp.CliResponse, error) {
 	reqBody := cli.Encode()
-	log.Printf("Posting to: %v", cliURL)
+	cmd := "none"
+	if cli != nil && cli.Client != nil {
+		cmd = cli.Client.Cmd
+	}
+	log.Printf("Posting %v to: %v", cmd, cliURL)
 	log.Printf("Body: %v", reqBody)
 	req, err := http.NewRequest(http.MethodPost, cliURL, strings.NewReader(reqBody))
 	if err != nil {
